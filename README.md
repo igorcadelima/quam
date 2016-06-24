@@ -34,7 +34,7 @@ Assuming that you have successfully added QuAM to your project, you can now anno
 
 **Igor C. A. de Lima**: 
 
-* [igorcadelima [at] gmail [dot] com](&#109;&#97;&#105;&#108;&#116;&#111;&#58;%69%67%6F%72%63%61%64%65%6C%69%6D%61%40%67%6D%61%69%6C%2E%63%6F%6D)
+* [igorcadelima [at] gmail [dot] com](mailto:%69%67%6F%72%63%61%64%65%6C%69%6D%61%40%67%6D%61%69%6C%2E%63%6F%6D)
 * <https://github.com/igorcadelima>
 
 ## License
