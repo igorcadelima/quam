@@ -18,7 +18,7 @@ How to use
 
 Type the following command in your terminal to create your JAR file:
 ```console
-./gradle clean jar
+gradle clean jar
 ```
 Now you can find the JAR file file under ```build/libs/``` and add it to your project.
 
