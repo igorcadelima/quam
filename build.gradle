@@ -36,6 +36,7 @@ task compileJava(dependsOn: JavaPlugin.PROCESS_RESOURCES_TASK_NAME, overwrite: t
 				aspectPath:configurations.aspects.asPath,
 				inpath:configurations.ajInpath.asPath,
 				sourceRootCopyFilter:"**/.svn/*,**/*.java",
+				Xlint: "ignore",
 				classpath:configurations.compile.asPath){
 					sourceroots{
 						sourceSets.main.java.srcDirs.each{
