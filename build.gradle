@@ -7,60 +7,122 @@
  * user guide available at https://docs.gradle.org/2.14/userguide/tutorial_java_projects.html
  */
 
-configurations {
-  ajc
-  aspects
-}
 
 // Apply the java plugin to add support for Java
 apply plugin: 'java'
+// Apply the Eclipse plugin to add support for Eclipse IDE
+apply plugin: 'eclipse'
+
+
+configurations {
+	ajc
+	aspects
+	ajInpath
+}
 
 sourceCompatibility = 1.8
 version = '0.1'
 
-jar {
-    manifest {
-        attributes 'Implementation-Title': 'QuAM Framework',
-                   'Implementation-Version': version
-    }
+task compileJava(dependsOn: JavaPlugin.PROCESS_RESOURCES_TASK_NAME, overwrite: true)  {
+	dependsOn configurations.ajc.getTaskDependencyFromProjectDependency(true, "compileJava")
+	doLast{
+		ant.taskdef( resource:"org/aspectj/tools/ant/taskdefs/aspectjTaskdefs.properties",
+					classpath: configurations.ajc.asPath)
+		ant.iajc(source:sourceCompatibility,
+				target:targetCompatibility,
+				destDir:sourceSets.main.output.classesDir.absolutePath,
+				maxmem:"512m",
+				fork:"true",
+				aspectPath:configurations.aspects.asPath,
+				inpath:configurations.ajInpath.asPath,
+				sourceRootCopyFilter:"**/.svn/*,**/*.java",
+				classpath:configurations.compile.asPath){
+					sourceroots{
+						sourceSets.main.java.srcDirs.each{
+							pathelement(location:it.absolutePath)
+						}
+					}
+				}
+		}
+}
 
-	from {
-	    configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+
+// Add AspectJ support for eclipse plugin
+eclipse {
+	classpath {
+		file {
+			withXml {
+				xmlProvider ->
+				def classpath = xmlProvider.asNode()
+				def xmlparser = new XmlParser()
+
+				configurations.aspects.files.each{ aspectsLib ->
+					classpath.children().findAll{ it['@path'] == aspectsLib.absolutePath }.each {
+						def attrs = xmlparser.createNode(it, 'attributes', [:])
+						xmlparser.createNode(attrs,
+											'attribute',
+											[name: 'org.eclipse.ajdt.aspectpath',
+											value: 'true']);
+					}
+				}
+			}
+		}
 	}
 }
 
-compileJava {
-  doLast{
-      ant.taskdef( resource:"org/aspectj/tools/ant/taskdefs/aspectjTaskdefs.properties", classpath: configurations.ajc.asPath)
-      ant.iajc(source:sourceCompatibility, destDir:sourceSets.main.output.classesDir.absolutePath, maxmem:"512m", fork:"true",
-          aspectPath:configurations.aspects.asPath,
-            sourceRootCopyFilter:"**/.svn/*,**/*.java",classpath:configurations.compile.asPath){
-          sourceroots{
-              sourceSets.main.java.srcDirs.each{
-                  pathelement(location:it.absolutePath)
-              }
-          }
-      }
-  }
+
+eclipse {
+	project {
+		file {
+			withXml {
+				xmlProvider->
+				def projectDescription = xmlProvider.asNode()
+				def xmlparser = new XmlParser()
+
+				def builders = projectDescription.buildSpec[0]
+				def ajbuilder = xmlparser.createNode(builders, 'buildCommand', [:])
+				xmlparser.createNode(ajbuilder, 'name', [:]).setValue('org.eclipse.ajdt.core.ajbuilder')
+				xmlparser.createNode(ajbuilder, 'arguments', [:]);
+
+				def natures = projectDescription.natures[0]
+				def ajnature = xmlparser.createNode(null, 'nature', [:])
+				ajnature.setValue('org.eclipse.ajdt.ui.ajnature');
+				natures.children().add(0, ajnature)
+			}
+		}
+	}
 }
 
-// In this section you declare where to find the dependencies of your project
+// Create proper JAR
+jar {
+	manifest {
+		attributes 'Implementation-Title': 'QuAM Framework',
+				   'Implementation-Version': version
+	}
+
+	// Bundle up the dependencies in the jar
+	from {
+		configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+	}
+}
+
+
+// Repositories where the  dependencies should be found
 repositories {
-    mavenCentral()
+	mavenCentral()
 }
 
-// In this section you declare the dependencies for your production and test code
+// Dependencies for production and test code
 dependencies {
-    // Uses Log4j logging API
-    compile 'org.apache.logging.log4j:log4j-api:2.3'
-    compile 'org.apache.logging.log4j:log4j-core:2.3'
+	// Uses Log4j logging API
+	compile 'org.apache.logging.log4j:log4j-api:2.3'
+	compile 'org.apache.logging.log4j:log4j-core:2.3'
 
-    // Use Jackson to convert code elements to JSON format
-    compile 'com.fasterxml.jackson.core:jackson-core:[2.5.0,2.9.+]'
+	// Use Jackson to convert code elements to JSON format
+	compile 'com.fasterxml.jackson.core:jackson-core:[2.5.0,2.9.+]'
 	compile 'com.fasterxml.jackson.core:jackson-databind:[2.5.0,2.9.+]'
-    
-    // AspectJ    
-    ajc             "org.aspectj:aspectjtools:1.+"
-    compile         "org.aspectj:aspectjrt:1.+"
+
+	// AspectJ
+	ajc "org.aspectj:aspectjtools:1.+"
+	compile "org.aspectj:aspectjrt:1.+"
 }
- 
