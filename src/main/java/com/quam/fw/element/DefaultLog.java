@@ -67,7 +67,7 @@ public final class DefaultLog implements LoggableElement {
 		if (element.getClass().equals(Method.class)) {
 			// Needed a different approach. Otherwise, the entire path wouldn't
 			// be logged
-			executable = String.format("%s.%s", element.getDeclaringClass()
+			executable = String.format("%s#%s", element.getDeclaringClass()
 					.getName(), element.getName());
 
 		} else if (element.getClass().equals(Constructor.class)) {
